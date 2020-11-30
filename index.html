@@ -1,0 +1,260 @@
+
+<html>
+    <head>
+        <link rel="stylesheet" href="assets/bootstrap.min.css">
+        <link rel="stylesheet" href="assets/dataTables.bootstrap4.min.css">
+        <link rel="stylesheet" href="assets/toastr.min.css">
+        <style>
+            .table_box {
+                margin: 1cm;
+                padding: 5px;
+                border: 1px solid black;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            td, th {
+                border: 1px solid black;
+            }
+            .pull-right {
+                float: right;
+                margin-bottom: 10px;
+            }
+            #userTable tr th, #userTable tr td {
+                min-width: 60px;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2 align ="center">Simple CRUD using JS</h2>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="pull-right">
+						<button onclick="addUser();">Add</button>&nbsp &nbsp
+                        <button onclick="deleteUser();">Delete</button>  
+                    </div>
+                </div>
+            </div>
+            <div class="row"><div class="col-md-12">
+                <div id="table_box_native">
+                    <table id="userTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="checkAll" name="checkAll"></th>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Username</th>
+                                <th>Email Address</th>
+                                 <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+			</div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel"></h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="#" method="POST" id="FormSubmit" autocomplete="off">
+                            <input type="hidden" name='user_id' id='user_id' value=''>
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" class="form-control" id="name" placeholder="Enter Name" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" class="form-control" id="username" placeholder="Enter Username" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email address</label>
+                                <input type="email" class="form-control" id="email" placeholder="Enter Email Address" autocomplete="off">
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="submitFrm">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script src="assets/jquery-3.5.1.min.js"></script>
+    <script src="assets/bootstrap.min.js"></script>
+    <script src="assets/jquery.dataTables.min.js"></script>
+<script src="assets/dataTables.bootstrap4.min.js"></script>
+    <script src="assets/toastr.min.js"></script>
+    <script src="assets/bootbox.min.js"></script>
+    <script>
+	function resetForm() {
+		document.getElementById("user_id").value = "";
+		document.getElementById("fullName").value = "";
+		document.getElementById("email").value = "";
+
+		selectedRow = null;
+	}
+	
+        $(document).ready(function() {
+            // Get Data From Server
+            $.getJSON("https://jsonplaceholder.typicode.com/users/", function(json) {
+                if(json == '') {
+                    $('#userTable').append("<tbody>");
+                        $('#userTable').append("<tr><td colspan='5'>No Data Available</td></tr>");
+                    $('#userTable').append("</tbody>");
+                } else {
+                    $('#userTable').find("tbody");
+                    for (var counter = 0; counter < json.length; counter++) {
+                        $('#userTable').append("<tr><td><input type='checkbox' id='check"+counter+"' class='check_inner' value='"+json[counter].id+"' name='check"+counter+"'></td><td class='user_id'>" + json[counter].id + "</td><td class='name'>" + json[counter].name + "</td><td class='username'>" + json[counter].username + "</td><td class='email'>" + json[counter].email + "</td><td><button onclick='editUser();'>Edit</button></td></tr>");
+                    }
+                    // $('#userTable').append("</tbody>");
+                    $('#userTable').DataTable();
+                }
+            });
+
+            // User Add FormSubmit
+            $("#FormSubmit").submit(function(e) {
+                e.preventDefault();
+                $("#submitFrm").attr('disabled', true)
+                var name = $("#name").val();
+                var username = $("#username").val();
+                var email = $("#email").val();
+                var user_id = $("#user_id").val();
+                if(user_id == '') {
+                    if(name == '' || username == '' || email == '') {
+                        $("#submitFrm").attr('disabled', false)
+                        toastr.error("Some Input Fields are Empty")
+                    } else {
+                        $.ajax('https://jsonplaceholder.typicode.com/users', {
+                            method: 'POST',
+                            data: {
+                                name: name,
+                                username: username,
+                                email: email
+                            }
+                        }).then(function(data) {
+                            console.log(data);
+                            $('#userTable').find("tbody").append("<tr><td><input type='checkbox' class='check_inner' id='check"+data.id+"' value='"+data.id+"' name='check"+data.id+"'></td><td class='user_id'>" + data.id + "</td><td class='name'>" + data.name + "</td><td class='username'>" + data.username + "</td><td class='email'>" + data.email + "</td><td><button onclick='editUser();'>Edit</button></td></tr>");
+                        });
+                        $("#name").val('');
+                        $("#username").val('');
+                        $("#email").val('');
+                        $(".close").click();
+                        $("#submitFrm").attr('disabled', false)
+                        toastr.success("User Data Added Successfully")
+                        // $('#userTable').DataTable().ajax.reload();
+                    }
+                } else {
+                   // $.ajax('https://jsonplaceholder.typicode.com/users/'+user_id, {
+                    //    method: 'PUT',
+                   //     data: {
+                   //         id: user_id,
+                   //         name: name,
+                   //         username: username,
+                   //         email: email
+                    //    }
+                  //  }).then(function(data) {
+                   //     console.log(data);
+                        var checkedElemUp = $('#userTable').find('input[type="checkbox"]:checked');
+                        checkedElemUp.closest('tr').find("td.name").html(name)
+                        checkedElemUp.closest('tr').find("td.username").html(username)
+                        checkedElemUp.closest('tr').find("td.email").html(email)
+                        checkedElemUp.prop('checked', false);
+
+                       // $(".close").click();
+                        $("#name").val('');
+                        $("#username").val('');
+                        $("#email").val('');
+                        $(".close").click();
+                        $("#submitFrm").attr('disabled', false)
+                        toastr.success("User Data Updated Successfully")
+                   // });
+                }
+				resetForm();
+            });
+
+            // Oncheck for Check All
+            $("#checkAll").on("change", function(){
+                if($(this).is(':checked')) {
+                    $(".check_inner").prop('checked', true);
+                } else {
+                    $(".check_inner").prop('checked', false);
+                }
+            });
+
+            // Single checkbox is unchecked, Then uncheck CheckedAll checkbox
+            $('#userTable .check_inner').on('click',function(){
+                if($('.check_inner:checked').length == $('.check_inner').length){
+                    $('#checkAll').prop('checked',true);
+                }else{
+                    $('#checkAll').prop('checked',false);
+                }
+            });
+        });
+
+        // Add User
+        function addUser() {
+            $("#exampleModal").modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+            $("#exampleModalLabel").html("Add User");
+        }
+
+        // Edit User
+        function editUser() {
+            var checkedElem = $('#userTable tbody').find('input[type="checkbox"]:checked');
+            if(checkedElem.length == 1) {
+                var user_id = checkedElem.closest('tr').find("td.user_id").html()
+                var name = checkedElem.closest('tr').find("td.name").html()
+                var username = checkedElem.closest('tr').find("td.username").html()
+                var email = checkedElem.closest('tr').find("td.email").html()
+                $("#exampleModal").modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                $("#exampleModalLabel").html("Edit User");
+                $("#user_id").val(user_id);
+                $("#name").val(name);
+                $("#username").val(username);
+                $("#email").val(email);
+            } else {
+                toastr.error("Please select any one record to Edit");
+            }
+        }
+
+        // Delete User
+        function deleteUser() {
+            var checkedElem = $('#userTable tbody').find('input[type="checkbox"]:checked');
+            if(checkedElem.length >= 1) {
+                bootbox.confirm("Are you sure wants to delete ?", function(result){ 
+                    $('#userTable').find('input[type="checkbox"]:checked').each(function () {
+                        var elem = $(this)
+                        var value = elem.val();
+                        console.log(value);
+                        $.ajax('https://jsonplaceholder.typicode.com/users/'+value, {
+                            method: 'DELETE'
+                        }).then(function(data) {
+                            console.log(data)
+                            elem.closest('tr').remove();
+                        });
+                    });
+                    toastr.success("Selected Users Data Deleted Successfully");
+                });
+            } else {
+                toastr.error("Please select any one record to Delete");
+            }
+        }
+    </script>
+</html>
